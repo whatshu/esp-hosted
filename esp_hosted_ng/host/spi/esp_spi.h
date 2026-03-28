@@ -9,10 +9,8 @@
 
 #include "esp.h"
 
-#define HANDSHAKE_PIN           22
-#define SPI_IRQ                 gpio_to_irq(HANDSHAKE_PIN)
-#define SPI_DATA_READY_PIN      27
-#define SPI_DATA_READY_IRQ      gpio_to_irq(SPI_DATA_READY_PIN)
+#define HANDSHAKE_PIN_DEFAULT       22
+#define SPI_DATA_READY_PIN_DEFAULT  27
 #define SPI_BUF_SIZE            1600
 
 enum spi_flags_e {
@@ -35,6 +33,8 @@ struct esp_spi_context {
 	struct workqueue_struct     *nw_cmd_reinit_workqueue;
 	struct work_struct          nw_cmd_reinit_work;
 	uint8_t                     spi_clk_mhz;
+	int                         spi_handshake_irq;
+	int                         spi_dataready_irq;
 	uint8_t                     reserved[2];
 	unsigned long               spi_flags;
 };

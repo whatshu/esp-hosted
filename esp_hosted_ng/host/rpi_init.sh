@@ -22,6 +22,86 @@ IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 RPI_RESETPIN=6
 OTA_FILE=""
+SPI_BUS=0
+SPI_CS=0
+SPI_HS=22
+SPI_DR=27
+
+get_rpi_gpiochip_base()
+{
+    local chip=""
+    local label=""
+    local base=""
+
+    for chip in /sys/class/gpio/gpiochip*; do
+        [ -d "$chip" ] || continue
+        [ -r "$chip/label" ] || continue
+        label=$(cat "$chip/label")
+        case "$label" in
+            pinctrl-rp1|pinctrl-bcm2711|pinctrl-bcm2835)
+                if [ -r "$chip/base" ]; then
+                    base=$(cat "$chip/base")
+                    echo "$base"
+                    return 0
+                fi
+                ;;
+        esac
+    done
+
+    return 1
+}
+
+translate_gpio_for_kernel()
+{
+    local gpio_num="$1"
+    local base=""
+
+    if [ -z "$gpio_num" ]; then
+        return 1
+    fi
+
+    if [ "$gpio_num" -lt 0 ] || [ "$gpio_num" -gt 53 ]; then
+        echo "$gpio_num"
+        return 0
+    fi
+
+    base=$(get_rpi_gpiochip_base)
+    if [ -n "$base" ] && [ "$base" != "0" ]; then
+        echo $((base + gpio_num))
+    else
+        echo "$gpio_num"
+    fi
+}
+
+resolve_gpio_mapping()
+{
+    local mapped_reset=""
+    local mapped_hs=""
+    local mapped_dr=""
+    local resolved_reset_bcm=""
+
+    if [ "$RESETPIN" = "" ] ; then
+        resolved_reset_bcm="$RPI_RESETPIN"
+    else
+        resolved_reset_bcm="${RESETPIN#*=}"
+    fi
+
+    mapped_reset=$(translate_gpio_for_kernel "$resolved_reset_bcm")
+    mapped_hs=$(translate_gpio_for_kernel "$SPI_HS")
+    mapped_dr=$(translate_gpio_for_kernel "$SPI_DR")
+
+    if [ -n "$mapped_reset" ]; then
+        RESETPIN="resetpin=$mapped_reset"
+    fi
+    if [ -n "$mapped_hs" ]; then
+        SPI_HS="$mapped_hs"
+    fi
+    if [ -n "$mapped_dr" ]; then
+        SPI_DR="$mapped_dr"
+    fi
+
+    echo "Resolved GPIOs for kernel API: reset=${RESETPIN#*=}, spi_hs=${SPI_HS}, spi_dr=${SPI_DR}"
+}
 
 bringup_network_interface()
 {
@@ -64,11 +144,9 @@ wlan_init()
 
     make -j8 target=$IF_TYPE KERNEL="/lib/modules/$(uname -r)/build" ARCH=$arch_found $CUSTOM_OPTS \
 
-    if [ "$RESETPIN" = "" ] ; then
-        #By Default, BCM6 is GPIO on host. use resetpin=6
-        sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
+    if [ "$IF_TYPE" = "spi" ] ; then
+        sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE spi_bus=$SPI_BUS spi_cs=$SPI_CS spi_handshake=$SPI_HS spi_dataready=$SPI_DR
     else
-        #Use resetpin value from argument
         sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
     fi
 
@@ -102,6 +180,11 @@ usage()
     echo "  btuart_2pins:  Set GPIO pins on RPI for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
     echo "  resetpin=6:   Set GPIO pins on RPI connected to EN pin of ESP32, used to reset ESP32 (default: 6 for BCM6)"
     echo "  ap_support:     Enable access point support"
+    echo "  spi_bus=<n>:    SPI bus number (default: 0)"
+    echo "  spi_cs=<n>:     SPI chip select (default: 0)"
+    echo "  spi_hs=<n>:     SPI handshake GPIO number (default: 22)"
+    echo "  spi_dr=<n>:     SPI data-ready GPIO number (default: 27)"
+    echo "                  (All GPIO values use BCM numbering; script auto-translates for kernel GPIO base)"
     echo "\nExample:"
     echo "  - Prepare RPi for WLAN operation on SDIO. SDIO is default if no interface mentioned."
     echo "    # ./rpi_init.sh or ./rpi_init.sh sdio"
@@ -161,6 +244,18 @@ parse_arguments()
                 echo "Recvd Option: $1"
                 OTA_FILE=${1#*=}
                 ;;
+            spi_bus=*)
+                SPI_BUS=${1#*=}
+                ;;
+            spi_cs=*)
+                SPI_CS=${1#*=}
+                ;;
+            spi_hs=*)
+                SPI_HS=${1#*=}
+                ;;
+            spi_dr=*)
+                SPI_DR=${1#*=}
+                ;;
             *)
                 echo "$1 : unknown option"
                 usage
@@ -172,6 +267,7 @@ parse_arguments()
 }
 
 parse_arguments $*
+resolve_gpio_mapping
 if [ "$IF_TYPE" = "" ] ; then
     echo "Error: No protocol selected"
     usage

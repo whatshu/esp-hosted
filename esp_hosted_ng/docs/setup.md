@@ -138,7 +138,7 @@ directory
 * Hardware requirements
     1) 8-12 jumper wires of length < 10cm.
     2) ESP32, ESP32 C3, ESP32 S3, ESP32 C2 board.
-    3) Raspberry-Pi 3 model B/B+ or Raspberry-Pi 4 model B
+    3) Raspberry-Pi 3 model B/B+, Raspberry-Pi 4 model B or Raspberry-Pi 5
 * This is section is divided into following transport layers.
    1) [SPI configuration](#21-spi-configuration) Wi-Fi and Bluetooth over SPI
    2) [SDIO configuration](#22-sdio-configuration) Wifi and bluetooth over SDIO
@@ -187,6 +187,7 @@ directory
             ```
          - add `ap_support` if you want to use interface as access point.
         * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used as a control interface for Wi-Fi on ESP peripheral
+        * For Raspberry Pi 5, `rpi_init.sh` accepts BCM GPIO numbering and automatically translates to the Linux kernel GPIO base when loading the driver.
 
         * Follow these steps to [Manually load the Kernel Module](6-manually-loading-and-unloading-the-kernel-module)
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
@@ -269,6 +270,7 @@ directory
             ```
         - add `ap_support` if you want to use interface as access point.
         * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used for Wi-Fi in host.
+        * For Raspberry Pi 5, `rpi_init.sh` accepts BCM GPIO numbering and automatically translates to the Linux kernel GPIO base when loading the driver.
 
         * Follow these steps to [Manually load the Kernel Module](6-manually-loading-and-unloading-the-kernel-module)
     * For esp firmware if you are using [ESP Quick start guide](#12-esp-quick-start-guide)
