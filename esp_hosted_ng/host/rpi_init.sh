@@ -22,6 +22,10 @@ IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 RPI_RESETPIN=6
 OTA_FILE=""
+SPI_BUS=0
+SPI_CS=0
+SPI_HS=22
+SPI_DR=27
 
 bringup_network_interface()
 {
@@ -66,10 +70,18 @@ wlan_init()
 
     if [ "$RESETPIN" = "" ] ; then
         #By Default, BCM6 is GPIO on host. use resetpin=6
-        sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
+        if [ "$IF_TYPE" = "spi" ] ; then
+            sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE spi_bus=$SPI_BUS spi_cs=$SPI_CS spi_handshake=$SPI_HS spi_dataready=$SPI_DR
+        else
+            sudo insmod $MODULE_NAME resetpin=$RPI_RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
+        fi
     else
         #Use resetpin value from argument
-        sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
+        if [ "$IF_TYPE" = "spi" ] ; then
+            sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE spi_bus=$SPI_BUS spi_cs=$SPI_CS spi_handshake=$SPI_HS spi_dataready=$SPI_DR
+        else
+            sudo insmod $MODULE_NAME $RESETPIN raw_tp_mode=$RAW_TP_MODE ota_file=$OTA_FILE
+        fi
     fi
 
     if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
@@ -102,6 +114,10 @@ usage()
     echo "  btuart_2pins:  Set GPIO pins on RPI for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
     echo "  resetpin=6:   Set GPIO pins on RPI connected to EN pin of ESP32, used to reset ESP32 (default: 6 for BCM6)"
     echo "  ap_support:     Enable access point support"
+    echo "  spi_bus=<n>:    SPI bus number (default: 0)"
+    echo "  spi_cs=<n>:     SPI chip select (default: 0)"
+    echo "  spi_hs=<n>:     SPI handshake GPIO number (default: 22)"
+    echo "  spi_dr=<n>:     SPI data-ready GPIO number (default: 27)"
     echo "\nExample:"
     echo "  - Prepare RPi for WLAN operation on SDIO. SDIO is default if no interface mentioned."
     echo "    # ./rpi_init.sh or ./rpi_init.sh sdio"
@@ -160,6 +176,18 @@ parse_arguments()
             ota_file=*)
                 echo "Recvd Option: $1"
                 OTA_FILE=${1#*=}
+                ;;
+            spi_bus=*)
+                SPI_BUS=${1#*=}
+                ;;
+            spi_cs=*)
+                SPI_CS=${1#*=}
+                ;;
+            spi_hs=*)
+                SPI_HS=${1#*=}
+                ;;
+            spi_dr=*)
+                SPI_DR=${1#*=}
                 ;;
             *)
                 echo "$1 : unknown option"

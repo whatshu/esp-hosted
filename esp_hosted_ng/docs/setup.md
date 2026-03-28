@@ -138,7 +138,7 @@ directory
 * Hardware requirements
     1) 8-12 jumper wires of length < 10cm.
     2) ESP32, ESP32 C3, ESP32 S3, ESP32 C2 board.
-    3) Raspberry-Pi 3 model B/B+ or Raspberry-Pi 4 model B
+    3) Raspberry-Pi 3 model B/B+, Raspberry-Pi 4 model B or Raspberry-Pi 5
 * This is section is divided into following transport layers.
    1) [SPI configuration](#21-spi-configuration) Wi-Fi and Bluetooth over SPI
    2) [SDIO configuration](#22-sdio-configuration) Wifi and bluetooth over SDIO

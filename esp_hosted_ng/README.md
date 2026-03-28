@@ -74,6 +74,7 @@ Looking for other chipset? Please do check [Coming Soon](#5-coming-soon) section
   - Raspberry-Pi 3 Model B
   - Raspberry-Pi 3 Model B+
   - Raspberry-Pi 4 Model B
+  - Raspberry-Pi 5
 - This solution is aimed for Linux based hosts only. For microcontroller(MCU) based hosts (like STM32 etc), [ESP-Hosted-FG](../esp_hosted_fg) flavour should be used.
 - Although we try to help in porting, We expect users to get the transport interfaces like SDIO/SPI/UART configured on your Linux platform. Device tree configuration and device drivers could be some times tricky as every Linux platform has it different.
 - It is relatively easy to port this solution to other Linux based platforms. Please refer [Porting Guide](docs/porting_guide.md) for the common steps. 
