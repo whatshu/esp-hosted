@@ -9,10 +9,13 @@
 
 #include "esp.h"
 
-#define HANDSHAKE_PIN           22
-#define SPI_IRQ                 gpio_to_irq(HANDSHAKE_PIN)
-#define SPI_DATA_READY_PIN      27
-#define SPI_DATA_READY_IRQ      gpio_to_irq(SPI_DATA_READY_PIN)
+/*
+ * SPI handshake / data-ready lines follow esp-hosted 40-pin wiring (BCM 22 / 27).
+ * On Raspberry Pi 5 they are provided by the RP1 gpiochip (pinctrl-rp1): base 571 with
+ * line offset equal to the BCM number, hence Linux GPIO 593 / 598 for the defaults below.
+ */
+#define HANDSHAKE_PIN_DEFAULT       593
+#define SPI_DATA_READY_PIN_DEFAULT  598
 #define SPI_BUF_SIZE            1600
 
 enum spi_flags_e {
@@ -35,6 +38,8 @@ struct esp_spi_context {
 	struct workqueue_struct     *nw_cmd_reinit_workqueue;
 	struct work_struct          nw_cmd_reinit_work;
 	uint8_t                     spi_clk_mhz;
+	int                         spi_handshake_irq;
+	int                         spi_dataready_irq;
 	uint8_t                     reserved[2];
 	unsigned long               spi_flags;
 };

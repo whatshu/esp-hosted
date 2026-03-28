@@ -4,6 +4,8 @@
  *
  * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
+ * Host bring-up in this tree is maintained for Raspberry Pi 5 (RP1 GPIO numbering);
+ * default module parameters use Linux GPIO numbers for that platform.
  */
 #include "utils.h"
 #include <linux/init.h>
@@ -43,7 +45,7 @@ char version_str[VERSION_BUFFER_SIZE];
 
 
 module_param(resetpin, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-MODULE_PARM_DESC(resetpin, "Host's GPIO pin number which is connected to ESP32's EN to reset ESP32 device");
+MODULE_PARM_DESC(resetpin, "Linux GPIO number on host wired to ESP32 EN (e.g. 577 on Raspberry Pi 5 for default header BCM6)");
 
 module_param(clockspeed, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC(clockspeed, "Hosts clock speed in MHz");
