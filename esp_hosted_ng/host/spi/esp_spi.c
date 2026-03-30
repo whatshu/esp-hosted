@@ -475,14 +475,14 @@ static int spi_dev_init(int spi_clk_mhz)
 	set_bit(ESP_SPI_BUS_SET, &spi_context.spi_flags);
 
 	// Check if GPIO is valid for Raspberry Pi 5
-	esp_info("Validating GPIO pins for Raspberry Pi 5\\n");
+	esp_info("Validating GPIO pins for platform\n");
 	if (gpio_is_valid(spi_handshake) <= 0) {
-		esp_err("Handshake GPIO %d is not valid\\n", spi_handshake);
+		esp_err("Handshake GPIO %d is not valid\n", spi_handshake);
 		return -EINVAL;
 	}
 
 	if (gpio_is_valid(spi_dataready) <= 0) {
-		esp_err("Data Ready GPIO %d is not valid\\n", spi_dataready);
+		esp_err("Data Ready GPIO %d is not valid\n", spi_dataready);
 		return -EINVAL;
 	}
 
@@ -518,7 +518,7 @@ static int spi_dev_init(int spi_clk_mhz)
 		esp_err("Failed to request IRQ for Handshake pin, err:%d\n", status);
 		return status;
 	}
-	esp_info("Successfully requested IRQ %d for Handshake GPIO %d\\n", 
+	esp_info("Successfully requested IRQ %d for Handshake GPIO %d\n",
 		spi_context.spi_handshake_irq, spi_handshake);
 	set_bit(ESP_SPI_GPIO_HS_IRQ_DONE, &spi_context.spi_flags);
 
@@ -529,7 +529,7 @@ static int spi_dev_init(int spi_clk_mhz)
 		esp_err("Failed to obtain GPIO for Data ready pin, err:%d\n", status);
 		return status;
 	}
-	esp_info("Successfully requested Data Ready GPIO %d\\n", spi_dataready);
+	esp_info("Successfully requested Data Ready GPIO %d\n", spi_dataready);
 	set_bit(ESP_SPI_GPIO_DR_REQUESTED, &spi_context.spi_flags);
 
 	status = gpio_direction_input(spi_dataready);
@@ -561,7 +561,7 @@ static int spi_dev_init(int spi_clk_mhz)
 		esp_err("Failed to request IRQ for Data ready pin, err:%d\n", status);
 		return status;
 	}
-	esp_info("Successfully requested IRQ %d for Data Ready GPIO %d\\n", 
+	esp_info("Successfully requested IRQ %d for Data Ready GPIO %d\n",
 		spi_context.spi_dataready_irq, spi_dataready);
 	set_bit(ESP_SPI_GPIO_DR_IRQ_DONE, &spi_context.spi_flags);
 

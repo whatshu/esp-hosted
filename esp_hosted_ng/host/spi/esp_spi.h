@@ -9,8 +9,13 @@
 
 #include "esp.h"
 
-#define HANDSHAKE_PIN_DEFAULT       549
-#define SPI_DATA_READY_PIN_DEFAULT  550
+/*
+ * Legacy BCM GPIO numbers for 40-pin header: HS=22, DR=27 (see esp-hosted wiring).
+ * Raspberry Pi 5: those lines sit on the RP1 gpiochip (label pinctrl-rp1), sysfs base 571
+ * and line offset == BCM number -> Linux GPIO 593 / 598. Pi 4 and earlier used 22 / 27.
+ */
+#define HANDSHAKE_PIN_DEFAULT       593
+#define SPI_DATA_READY_PIN_DEFAULT  598
 #define SPI_BUF_SIZE            1600
 
 enum spi_flags_e {

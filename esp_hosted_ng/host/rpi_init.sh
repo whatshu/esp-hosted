@@ -20,20 +20,22 @@ BT_INIT_SET="0"
 RAW_TP_MODE="0"
 IF_TYPE="sdio"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
-RPI_RESETPIN=6
+# Pi 5: BCM6 -> Linux GPIO 577. Pi 3/4: pass resetpin=6 (BCM numbering matches Linux GPIO)
+RPI_RESETPIN=577
 OTA_FILE=""
 SPI_BUS=0
 SPI_CS=0
-SPI_HS=549
-SPI_DR=550
+# Pi 5 (RP1): BCM22/27 -> Linux GPIO 593/598. Pi 3/4: use spi_hs=22 spi_dr=27
+SPI_HS=593
+SPI_DR=598
 
-bringup_network_interface()
+bringup_esp_wlan_interfaces()
 {
-	if [ "$1" != "" ] ; then
-		if [ `ifconfig -a | grep $1 | wc -l` != "0" ]; then
-			sudo ifconfig $1 up
-		fi
-	fi
+	# Do not touch wlan0: on Pi 5 it is usually onboard brcmfmac (keep as your uplink).
+	for dev in $(ip -o link show 2>/dev/null | awk -F': ' '/ wlan/{print $2}' | tr -d ' '); do
+		[ "$dev" = "wlan0" ] && continue
+		sudo ip link set "$dev" up 2>/dev/null || true
+	done
 }
 
 wlan_init()
@@ -87,7 +89,7 @@ wlan_init()
     if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
         echo "esp32 module inserted "
 		sleep 4
-		bringup_network_interface "wlan0"
+		bringup_esp_wlan_interfaces
 
         echo "ESP32 host init successfully completed"
     fi
@@ -112,12 +114,12 @@ usage()
     echo "  sdio:          sets ESP32<->RPI communication over SDIO"
     echo "  btuart:        Set GPIO pins on RPI for HCI UART operations with TX, RX, CTS, RTS (defaulted to option btuart_4pins)"
     echo "  btuart_2pins:  Set GPIO pins on RPI for HCI UART operations with only TX & RX pins configured (only for ESP32-C2/C6)"
-    echo "  resetpin=6:   Set GPIO pins on RPI connected to EN pin of ESP32, used to reset ESP32 (default: 6 for BCM6)"
+    echo "  resetpin=577: BCM6 on Pi 5 Linux GPIO (default here). Pi 4: use resetpin=6"
     echo "  ap_support:     Enable access point support"
     echo "  spi_bus=<n>:    SPI bus number (default: 0)"
     echo "  spi_cs=<n>:     SPI chip select (default: 0)"
-    echo "  spi_hs=<n>:     SPI handshake GPIO number (default: 22)"
-    echo "  spi_dr=<n>:     SPI data-ready GPIO number (default: 27)"
+    echo "  spi_hs=<n>:     SPI handshake GPIO Linux number (Pi 5 default 593=BCM22; Pi 4: 22)"
+    echo "  spi_dr=<n>:     SPI data-ready GPIO Linux number (Pi 5 default 598=BCM27; Pi 4: 27)"
     echo "\nExample:"
     echo "  - Prepare RPi for WLAN operation on SDIO. SDIO is default if no interface mentioned."
     echo "    # ./rpi_init.sh or ./rpi_init.sh sdio"
