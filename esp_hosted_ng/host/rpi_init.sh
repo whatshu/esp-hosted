@@ -24,8 +24,8 @@ RPI_RESETPIN=6
 OTA_FILE=""
 SPI_BUS=0
 SPI_CS=0
-SPI_HS=22
-SPI_DR=27
+SPI_HS=549
+SPI_DR=550
 
 bringup_network_interface()
 {

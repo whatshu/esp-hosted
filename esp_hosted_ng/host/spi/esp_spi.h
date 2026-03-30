@@ -9,8 +9,8 @@
 
 #include "esp.h"
 
-#define HANDSHAKE_PIN_DEFAULT       22
-#define SPI_DATA_READY_PIN_DEFAULT  27
+#define HANDSHAKE_PIN_DEFAULT       549
+#define SPI_DATA_READY_PIN_DEFAULT  550
 #define SPI_BUF_SIZE            1600
 
 enum spi_flags_e {
