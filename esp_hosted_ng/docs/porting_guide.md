@@ -119,7 +119,7 @@ KERNEL=/home/user1/arm64_kernel
 * Additional GPIOs
 		- Apart from regular MOSI, MISO, CLK and Chip select, there are two additional GPIO pins used for SPI implementation.
 		- These pins should be selected such that they would not interfere other any peripheral work.
-		- Alter `HANDSHAKE_PIN` and `SPI_DATA_READY_PIN` in [esp_spi.h](../host/spi/esp_spi.h).
+		- The handshake and data-ready GPIO numbers are set via module parameters `spi_handshake` and `spi_dataready` at `insmod` time (or via `rpi_init.sh spi_hs=<n> spi_dr=<n>`). Default values in [esp_spi.h](../host/spi/esp_spi.h) target Raspberry Pi 5 (Linux GPIO 593 / 598). Adjust these for your platform.
 		- Additional pins functionality details mentioned in [1.1.1 additional pin setup](../spi_protocol.md#111-additional-pin-setup) of [spi protocol documentation](../spi_protocol.md).
 * cs_change
 		- Reason why this setting was enabled is, SPI transfer was losing first byte in transfer. Although this issue is only observed while testing with Raspberry Pi. Enabling cs_change=1 makes CS always de-assert after each transfer request. While porting, you may want to remove line, `trans.cs_change = 1;`.

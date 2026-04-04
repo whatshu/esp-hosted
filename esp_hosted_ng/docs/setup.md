@@ -501,12 +501,16 @@ Once the kernel modules `esp32_sdio.ko` or `esp32_spi.ko` are built, they can be
 
 ### **Module Parameters**
 
-| Parameter     | Description                                                  |
-| ------------- | ------------------------------------------------------------ |
-| `resetpin`    | GPIO pin used to reset the ESP peripheral                    |
-| `clockspeed`  | Clock frequency in MHz (max 50 for SDIO, 40 for SPI)         |
-| `raw_tp_mode` | Enables raw throughput mode to measure transport performance |
-| `ota_file`    | Path to the firmware binary for updating the ESP             |
+| Parameter       | Interface | Description                                                  |
+| --------------- | --------- | ------------------------------------------------------------ |
+| `resetpin`      | All       | GPIO pin used to reset the ESP peripheral                    |
+| `clockspeed`    | All       | Clock frequency in MHz (max 50 for SDIO, 40 for SPI)         |
+| `raw_tp_mode`   | All       | Enables raw throughput mode to measure transport performance |
+| `ota_file`      | All       | Path to the firmware binary for updating the ESP             |
+| `spi_bus`       | SPI only  | SPI bus number (default: 0)                                  |
+| `spi_cs`        | SPI only  | SPI chip select (default: 0)                                 |
+| `spi_handshake` | SPI only  | Linux GPIO number for Handshake pin (default: 593 = BCM22 on Raspberry Pi 5) |
+| `spi_dataready` | SPI only  | Linux GPIO number for Data Ready pin (default: 598 = BCM27 on Raspberry Pi 5) |
 
 **Notes:**
 
@@ -521,6 +525,7 @@ Once the kernel modules `esp32_sdio.ko` or `esp32_spi.ko` are built, they can be
   * `rawtp_host_to_esp`: Sends frames from Host → ESP.
   * `rawtp_esp_to_host`: Sends frames from ESP → Host.
 * `ota_file` is **optional**. When specified, it triggers a firmware update on the ESP. After a successful update, the ESP reboots and reconnects automatically.
+* `spi_handshake` and `spi_dataready` are **optional** for SPI. On Raspberry Pi 5 the RP1 GPIO controller numbers GPIO lines as `base (571) + BCM number`, so BCM22 (Pin 15) = 593 and BCM27 (Pin 13) = 598. Other platforms will have different values.
 
 ---
 
@@ -535,7 +540,8 @@ $ sudo insmod esp_hosted/esp_hosted_ng/host/esp32_sdio.ko resetpin=6
 **For SPI:**
 
 ```bash
-$ sudo insmod esp_hosted/esp_hosted_ng/host/esp32_spi.ko resetpin=6
+# Raspberry Pi 5 (BCM6=reset, BCM22=handshake, BCM27=data-ready → Linux GPIO 577/593/598)
+$ sudo insmod esp_hosted/esp_hosted_ng/host/esp32_spi.ko resetpin=577 spi_handshake=593 spi_dataready=598
 ```
 
 You can also pass optional parameters:
