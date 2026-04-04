@@ -232,20 +232,29 @@ int esp_deinit_module(struct esp_adapter *adapter)
  * RP1 DW SPI phantom-edge correction.
  *
  * On Raspberry Pi 5, after a module reload the DesignWare SPI controller
- * leaves its clock line LOW (wrong idle for CPOL=1 / MODE 2).  The first
- * LOW→HIGH transition at CS-assert time is treated as a data edge by the
- * ESP32 slave, which shifts out one extra MISO bit.  This right-shifts
- * every received byte by one bit position for the entire session.
+ * (dw_spi_mmio) leaves its clock line LOW — wrong idle for CPOL=1/MODE 2.
+ * When the next transfer begins, the controller raises CLK HIGH first
+ * (returning to idle), producing a spurious rising edge before the first
+ * real falling-edge sample point.  The ESP32 SPI slave treats that rising
+ * edge as a shift-register advance and drives MISO bit 6 of byte 0 where
+ * bit 7 is expected.  Every subsequent bit is therefore one position early,
+ * so the master (Pi) receives a LEFT-shifted bit stream:
+ *
+ *   received[i] = (actual[i] << 1) | (actual[i+1] >> 7)
+ *
+ * Recovery (right-shift): actual[i] = (received[i] >> 1) | ((received[i-1] & 1) << 7)
+ * The MSB of byte 0 is unrecoverable (was shifted off); it is always 0 for
+ * the packet types we care about (if_type and if_num fit in 4 bits each).
  *
  * When detected, spi_context.rx_bit_shifted is set and every subsequent
- * received buffer is corrected by a 1-bit left-shift before parsing.
+ * received buffer is corrected by this 1-bit right-shift before parsing.
  */
 static void rx_apply_bit_unshift(u8 *data, int len)
 {
 	int i;
-	for (i = 0; i < len - 1; i++)
-		data[i] = (data[i] << 1) | (data[i + 1] >> 7);
-	data[len - 1] <<= 1;
+	for (i = len - 1; i > 0; i--)
+		data[i] = (data[i] >> 1) | ((data[i - 1] & 0x01) << 7);
+	data[0] >>= 1;
 }
 
 static int process_rx_buf(struct sk_buff *skb)

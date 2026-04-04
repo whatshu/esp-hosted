@@ -349,10 +349,10 @@ struct wireless_dev *esp_cfg80211_add_iface(struct wiphy *wiphy,
 
 free_and_return:
 	clear_bit(ESP_DRIVER_ACTIVE, &esp_wdev->adapter->state_flags);
+	/* Clear adapter->priv before freeing to prevent dangling pointer in esp_exit */
+	esp_wdev->adapter->priv[esp_nw_if_num] = NULL;
 	dev_net_set(ndev, NULL);
 	free_netdev(ndev);
-	esp_wdev->ndev = NULL;
-	esp_wdev->wdev.netdev = NULL;
 	ndev = NULL;
 	return NULL;
 }

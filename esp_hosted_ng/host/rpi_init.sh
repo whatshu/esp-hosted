@@ -38,13 +38,34 @@ bringup_esp_wlan_interfaces()
 	done
 }
 
+safe_rmmod()
+{
+    local mod="$1"
+    local retries=5
+    local i=0
+    sudo rmmod "$mod" 2>/dev/null || true
+    while [ $i -lt $retries ]; do
+        if ! lsmod | grep -q "^${mod} "; then
+            return 0
+        fi
+        sleep 1
+        sudo rmmod "$mod" 2>/dev/null || true
+        i=$((i + 1))
+    done
+    if lsmod | grep -q "^${mod} "; then
+        echo "Warning: could not unload $mod after $retries attempts"
+        return 1
+    fi
+    return 0
+}
+
 wlan_init()
 {
-    if [ `lsmod | grep esp32 | wc -l` != "0" ]; then
-        if [ `lsmod | grep esp32_sdio | wc -l` != "0" ]; then
-            sudo rmmod esp32_sdio &> /dev/null
-            else
-            sudo rmmod esp32_spi &> /dev/null
+    if lsmod | grep -q "^esp32"; then
+        if lsmod | grep -q "^esp32_sdio "; then
+            safe_rmmod esp32_sdio
+        else
+            safe_rmmod esp32_spi
         fi
     fi
 
