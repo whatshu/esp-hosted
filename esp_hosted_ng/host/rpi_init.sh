@@ -18,7 +18,7 @@
 RESETPIN=""
 BT_INIT_SET="0"
 RAW_TP_MODE="0"
-IF_TYPE="sdio"
+IF_TYPE="spi"
 MODULE_NAME="esp32_${IF_TYPE}.ko"
 # Raspberry Pi 5: BCM6 on the 40-pin header -> Linux GPIO 577
 RPI_RESETPIN=577
@@ -212,10 +212,13 @@ else
 fi
 
 if [ "$IF_TYPE" = "spi" ] ; then
-    rm spidev_disabler.dtbo
-    # Disable default spidev driver
-    dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
-    sudo dtoverlay -d . spidev_disabler
+    # Only apply spidev_disabler if not already loaded (avoid stacking duplicate overlays)
+    if ! dtoverlay -l 2>/dev/null | grep -q "spidev_disabler"; then
+        rm -f spidev_disabler.dtbo
+        # Disable default spidev driver
+        dtc spidev_disabler.dts -O dtb > spidev_disabler.dtbo
+        sudo dtoverlay -d . spidev_disabler
+    fi
 fi
 
 if [ `lsmod | grep bluetooth | wc -l` = "0" ]; then

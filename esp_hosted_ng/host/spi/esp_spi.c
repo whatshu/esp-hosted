@@ -228,6 +228,26 @@ int esp_deinit_module(struct esp_adapter *adapter)
 	return 0;
 }
 
+/*
+ * RP1 DW SPI phantom-edge correction.
+ *
+ * On Raspberry Pi 5, after a module reload the DesignWare SPI controller
+ * leaves its clock line LOW (wrong idle for CPOL=1 / MODE 2).  The first
+ * LOW→HIGH transition at CS-assert time is treated as a data edge by the
+ * ESP32 slave, which shifts out one extra MISO bit.  This right-shifts
+ * every received byte by one bit position for the entire session.
+ *
+ * When detected, spi_context.rx_bit_shifted is set and every subsequent
+ * received buffer is corrected by a 1-bit left-shift before parsing.
+ */
+static void rx_apply_bit_unshift(u8 *data, int len)
+{
+	int i;
+	for (i = 0; i < len - 1; i++)
+		data[i] = (data[i] << 1) | (data[i + 1] >> 7);
+	data[len - 1] <<= 1;
+}
+
 static int process_rx_buf(struct sk_buff *skb)
 {
 	struct esp_payload_header *header;
@@ -236,6 +256,10 @@ static int process_rx_buf(struct sk_buff *skb)
 
 	if (!skb)
 		return -EINVAL;
+
+	/* Apply previously-detected 1-bit correction for all packets */
+	if (spi_context.rx_bit_shifted)
+		rx_apply_bit_unshift(skb->data, skb->len);
 
 	header = (struct esp_payload_header *) skb->data;
 
@@ -250,9 +274,31 @@ static int process_rx_buf(struct sk_buff *skb)
 		return -EINVAL;
 	}
 	if (len > SPI_BUF_SIZE || !ESP_OFFSET_VALID(offset)) {
-		esp_err("Drop invalid pkt: len=%d offset=%d\n", len, offset);
-		esp_hex_dump("rx_hdr: ", skb->data, 64);
-		return -EINVAL;
+		if (!spi_context.rx_bit_shifted) {
+			/*
+			 * Try 1-bit left-shift to detect RP1 SPI phantom edge.
+			 * If the un-shifted data gives a valid header, enable
+			 * correction for all future packets in this session.
+			 */
+			rx_apply_bit_unshift(skb->data, skb->len);
+			offset = le16_to_cpu(header->offset);
+			len = le16_to_cpu(header->len);
+			if (len > 0 && len <= SPI_BUF_SIZE &&
+			    ESP_OFFSET_VALID(offset) &&
+			    header->if_type < ESP_MAX_IF) {
+				spi_context.rx_bit_shifted = true;
+				esp_info("RP1 SPI 1-bit RX shift detected, correction enabled\n");
+				/* fall through with corrected data */
+			} else {
+				esp_err("Drop invalid pkt: len=%d offset=%d\n", len, offset);
+				esp_hex_dump("rx_hdr: ", skb->data, 64);
+				return -EINVAL;
+			}
+		} else {
+			esp_err("Drop invalid pkt: len=%d offset=%d\n", len, offset);
+			esp_hex_dump("rx_hdr: ", skb->data, 64);
+			return -EINVAL;
+		}
 	}
 
 	/* Total length = offset (header + padding) + payload */

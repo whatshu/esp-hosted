@@ -42,6 +42,7 @@ struct esp_spi_context {
 	int                         spi_dataready_irq;
 	uint8_t                     reserved[2];
 	unsigned long               spi_flags;
+	bool                        rx_bit_shifted; /* RP1 DW SPI phantom-edge correction */
 };
 
 enum {
