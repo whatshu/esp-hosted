@@ -251,6 +251,7 @@ static int process_rx_buf(struct sk_buff *skb)
 	}
 	if (len > SPI_BUF_SIZE || !ESP_OFFSET_VALID(offset)) {
 		esp_err("Drop invalid pkt: len=%d offset=%d\n", len, offset);
+		esp_hex_dump("rx_hdr: ", skb->data, 64);
 		return -EINVAL;
 	}
 
@@ -363,7 +364,6 @@ static void esp_spi_work(struct work_struct *work)
 				dev_kfree_skb(rx_skb);
 				dev_kfree_skb(tx_skb);
 			} else {
-
 				/* Free rx_skb if received data is not valid */
 				if (process_rx_buf(rx_skb)) {
 					dev_kfree_skb(rx_skb);
