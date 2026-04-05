@@ -183,9 +183,11 @@ directory
         * Execute following commands in root directory of cloned ESP-Hosted repository on Raspberry-Pi
             ```sh
             $ cd esp_hosted/esp_hosted_ng/host/
-            $ bash rpi_init.sh spi <ap_support>
+            $ bash rpi_init.sh
             ```
-         - add `ap_support` if you want to use interface as access point.
+         - The script defaults to SPI transport. Pass `ap_support` to enable access-point mode.
+         - On **Raspberry Pi 5** the script uses Pi 5 GPIO defaults automatically (resetpin=577, spi_handshake=593, spi_dataready=598). No arguments needed for a standard SPI wiring.
+         - The script is idempotent: it can be run multiple times safely — existing `spidev_disabler` overlay and loaded module are detected and handled without duplicates.
         * This script compiles and loads host driver on Raspberry-Pi. It also creates network interface `wlanX` which is used as a control interface for Wi-Fi on ESP peripheral
 
         * Follow these steps to [Manually load the Kernel Module](6-manually-loading-and-unloading-the-kernel-module)
@@ -381,7 +383,7 @@ directory
             $ cd esp_hosted/esp_hosted_ng/host/
             $ bash rpi_init.sh <transport> <bt_over_uart> <ap_support>
             ```
-        - `transport` can take value `sdio` or `spi`. Defaults to `sdio`
+        - `transport` can take value `sdio` or `spi`. Defaults to `spi`
         - `bt_over_uart` can take value `btuart` or `btuart_2pins`.
         - add `ap_support` if you want to use interface as access point.
         - :warning: Note:
@@ -514,7 +516,7 @@ Once the kernel modules `esp32_sdio.ko` or `esp32_spi.ko` are built, they can be
 
 **Notes:**
 
-* `resetpin` is **mandatory**.
+* `resetpin` is **mandatory** when loading the module directly with `insmod`. When using `rpi_init.sh`, it defaults to 577 (BCM6 on Raspberry Pi 5).
 * `clockspeed` is **optional**. If omitted:
 
   * SDIO defaults to 25–50 MHz as per device tree.
@@ -526,6 +528,8 @@ Once the kernel modules `esp32_sdio.ko` or `esp32_spi.ko` are built, they can be
   * `rawtp_esp_to_host`: Sends frames from ESP → Host.
 * `ota_file` is **optional**. When specified, it triggers a firmware update on the ESP. After a successful update, the ESP reboots and reconnects automatically.
 * `spi_handshake` and `spi_dataready` are **optional** for SPI. On Raspberry Pi 5 the RP1 GPIO controller numbers GPIO lines as `base (571) + BCM number`, so BCM22 (Pin 15) = 593 and BCM27 (Pin 13) = 598. Other platforms will have different values.
+
+> **Raspberry Pi 5 note:** After a module reload (`rmmod` + `insmod`) the RP1 DesignWare SPI controller may leave the SPI clock line in the wrong idle state for MODE 2, producing corrupted first packets. The driver detects and corrects this automatically (1-bit right-shift recovery). No manual workaround is needed.
 
 ---
 

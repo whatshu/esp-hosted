@@ -14,3 +14,17 @@ esp_hosted_ng/esp/esp_driver/cmake_install.cmake
 esp_hosted_ng/esp/esp_driver/network_adapter/build
 esp_hosted_ng/esp/esp_driver/network_adapter/sdkconfig
 esp_hosted_ng/esp/esp_driver/network_adapter/sdkconfig.old
+
+# Kernel module build artifacts
+esp_hosted_ng/host/*.ko
+esp_hosted_ng/host/*.o
+esp_hosted_ng/host/*.mod
+esp_hosted_ng/host/*.mod.c
+esp_hosted_ng/host/*.mod.o
+esp_hosted_ng/host/.*.cmd
+esp_hosted_ng/host/Module.symvers
+esp_hosted_ng/host/modules.order
+esp_hosted_ng/host/spi/*.o
+esp_hosted_ng/host/spi/.*.cmd
+esp_hosted_ng/host/.module-common.o
+esp_hosted_ng/host/spidev_disabler.dtbo
